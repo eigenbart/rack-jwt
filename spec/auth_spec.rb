@@ -14,7 +14,7 @@ describe Rack::JWT::Auth do
     Rack::JWT::Auth.new(main_app, { secret: secret })
   end
 
-  before do
+  def perform_request
     get('/', {}, headers)
   end
 
@@ -31,6 +31,8 @@ describe Rack::JWT::Auth do
 
     subject { JSON.parse(last_response.body) }
 
+    before { perform_request }
+
     it 'returns 401 status code' do
       expect(last_response.status).to eq(401)
     end
@@ -45,6 +47,8 @@ describe Rack::JWT::Auth do
     let(:headers) {{ 'HTTP_AUTHORIZATION' => token }}
 
     subject { JSON.parse(last_response.body) }
+
+    before { perform_request }
 
     it 'returns 401 status code' do
       expect(last_response.status).to eq(401)
@@ -61,6 +65,8 @@ describe Rack::JWT::Auth do
 
     subject { JSON.parse(last_response.body) }
 
+    before { perform_request }
+
     it 'returns 401 status code' do
       expect(last_response.status).to eq(401)
     end
@@ -76,12 +82,14 @@ describe Rack::JWT::Auth do
 
     subject { JSON.parse(last_response.body) }
 
+    before { perform_request }
+
     it 'returns 401 status code' do
       expect(last_response.status).to eq(401)
     end
 
     it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token')
+      expect(subject['error']).to eq("Invalid JSON Web Token : Signature verification failed")
     end
   end
 
@@ -95,6 +103,8 @@ describe Rack::JWT::Auth do
 
     subject { JSON.parse(last_response.body) }
 
+    before { perform_request }
+
     it 'returns 200 status code' do
       expect(last_response.status).to eq(200)
     end
@@ -105,6 +115,8 @@ describe Rack::JWT::Auth do
     let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
 
     subject { JSON.parse(last_response.body) }
+
+    before { perform_request }
 
     it 'returns 200 status code' do
       expect(last_response.status).to eq(200)
@@ -134,6 +146,8 @@ describe Rack::JWT::Auth do
     let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
 
     subject { JSON.parse(last_response.body) }
+
+    before { perform_request }
 
     it 'returns 200 status code' do
       expect(last_response.status).to eq(200)
@@ -167,12 +181,14 @@ describe Rack::JWT::Auth do
 
     subject { JSON.parse(last_response.body) }
 
+    before { perform_request }
+
     it 'returns 401 status code' do
       expect(last_response.status).to eq(401)
     end
 
     it 'returns an error message' do
-      expect(subject['error']).to eq('Invalid JWT token')
+      expect(subject['error']).to eq("Invalid JSON Web Token : Invalid iat")
     end
   end
 
@@ -187,6 +203,8 @@ describe Rack::JWT::Auth do
     let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
 
     subject { JSON.parse(last_response.body) }
+
+    before { perform_request }
 
     it 'returns 200 status code' do
       expect(last_response.status).to eq(200)
@@ -208,4 +226,17 @@ describe Rack::JWT::Auth do
     end
   end
 
+  context 'when token is valid but app raises an error unrelated to JWT' do
+    let(:token) { issuer.encode({ iss: 1 }, secret) }
+    let(:headers) {{ 'HTTP_AUTHORIZATION' => "Bearer #{token}" }}
+
+    let(:app) do
+      main_app = lambda { |env| raise 'BOOM!' }
+      Rack::JWT::Auth.new(main_app, { secret: secret })
+    end
+
+    it 'bubbles up the exception' do
+      expect { perform_request }.to raise_error('BOOM!')
+    end
+  end
 end
