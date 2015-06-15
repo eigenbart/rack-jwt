@@ -5,7 +5,9 @@ module Rack
     class Auth
       def initialize(app, opts = {})
         @app      = app
-        @secret   = opts.fetch(:secret)
+        @jwt_secret   = opts.fetch(:secret)
+        @jwt_verify   = opts.fetch(:verify, true)
+        @jwt_options  = opts.fetch(:options, {})
         @exclude  = opts.fetch(:exclude, [])
       end
 
@@ -21,15 +23,17 @@ module Rack
 
       def check_jwt_token(env)
         if valid_header?(env)
+          token = env['HTTP_AUTHORIZATION'].split(' ')[-1]
+
           begin
-            token = env['HTTP_AUTHORIZATION'].split(' ')[-1]
-            decoded_token = Token.decode(token, @secret)
-            env['jwt.header']  = decoded_token.last
-            env['jwt.payload'] = decoded_token.first
+            payload, header = Token.decode(token, @jwt_secret, @jwt_verify, @jwt_options)
+            env['jwt.payload'] = payload unless payload.nil?
+            env['jwt.header']  = header unless header.nil?
             @app.call(env)
-          rescue
-            return_error('Invalid JWT token')
+          rescue ::JWT::DecodeError => e
+            return_error("Invalid JSON Web Token : #{e.message}")
           end
+
         else
           return_jwt_header_error(env)
         end
