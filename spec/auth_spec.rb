@@ -23,6 +23,13 @@ describe Rack::JWT::Auth do
         end
       end
 
+      describe 'with secret: Proc.new {} arg provided' do
+        let(:app) { Rack::JWT::Auth.new(inner_app, secret: Proc.new { |token| 'helo' }) }
+        it 'is allowed' do
+          expect(app.secret).to be_a Proc
+        end
+      end
+
       describe 'with no secret: arg provided' do
         it 'raises ArgumentError' do
           expect { Rack::JWT::Auth.new(inner_app, {}) }.to raise_error(ArgumentError)

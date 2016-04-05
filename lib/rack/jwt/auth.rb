@@ -97,7 +97,8 @@ module Rack
         unless @secret.nil? ||
                @secret.is_a?(String) ||
                @secret.is_a?(OpenSSL::PKey::RSA) ||
-               @secret.is_a?(OpenSSL::PKey::EC)
+               @secret.is_a?(OpenSSL::PKey::EC) ||
+               @secret.is_a?(Proc)
           raise ArgumentError, 'secret argument must be a valid type'
         end
       end
