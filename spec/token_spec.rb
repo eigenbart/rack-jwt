@@ -35,6 +35,25 @@ describe Rack::JWT::Auth do
         expect(last_response.headers['jwt.header']).to eq({"typ"=>"JWT", "alg"=>"HS256"})
         expect(last_response.headers['jwt.payload']).to eq("foo" => "bar")
       end
+
+      context 'and proc secret' do
+        let(:app) do
+          pr = Proc.new do |payload|
+            payload['foo'] == 'bar' ? 'secret' : 'false-secret'
+          end
+          Rack::JWT::Auth.new(inner_app, secret: pr)
+        end
+
+        it 'returns a 200' do
+          header 'Authorization', "Bearer #{issuer.encode(payload, secret, 'HS256')}"
+          get('/')
+          expect(last_response.status).to eq 200
+          body = JSON.parse(last_response.body, symbolize_names: true)
+          expect(body).to eq(payload)
+          expect(last_response.headers['jwt.header']).to eq({"typ"=>"JWT", "alg"=>"HS256"})
+          expect(last_response.headers['jwt.payload']).to eq("foo" => "bar")
+        end
+      end
     end
 
     describe 'with valid HMAC HS256 token (explicit)' do
