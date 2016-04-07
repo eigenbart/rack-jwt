@@ -67,8 +67,13 @@ module Rack
 
         begin
           # If the secret is a proc evaluate it with the deserialized payload as a block
-          deserialized_payload = JSON.parse(Base64.decode64(token.split('.')[1]))
-          @secret = @secret.call(deserialized_payload) if @secret.respond_to?(:call)
+          # Otherwise just return the @secret as-is
+          secret = if @secret.respond_to?(:call)
+            deserialized_payload = JSON.parse(Base64.decode64(token.split('.')[1]))
+            @secret.call(deserialized_payload)
+          else
+            @secret
+          end
 
           decoded_token = Token.decode(token, @secret, @verify, @options)
           env['jwt.payload'] = decoded_token.first

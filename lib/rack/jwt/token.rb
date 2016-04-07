@@ -27,6 +27,10 @@ module Rack
         options[:algorithm] = 'HS256'     if options[:algorithm].nil?
         raise 'Unsupported algorithm'     unless algorithm_supported?(options[:algorithm])
 
+        # If secret is a proc evaluate it
+        deserialized_payload = JSON.parse(Base64.decode64(token.split('.')[1]))
+        secret = secret.call(deserialized_payload) if secret.respond_to? :call
+
         # If using an unsigned 'none' algorithm token you *must* set the
         # `secret` to `nil` and `verify` to `false` or it won't work per
         # the ruby-jwt docs. Using 'none' is probably not recommended.
@@ -59,7 +63,8 @@ module Rack
         secret.nil? ||
           secret.is_a?(String) ||
           secret.is_a?(OpenSSL::PKey::RSA) ||
-          secret.is_a?(OpenSSL::PKey::EC)
+          secret.is_a?(OpenSSL::PKey::EC) ||
+          secret.is_a?(Proc)
       end
       private_class_method :secret_of_valid_type?
     end
