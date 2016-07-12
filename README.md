@@ -32,7 +32,7 @@ $ gem install rack-jwt
 
 `Rack::JWT::Auth` accepts several configuration options. All options are passed in a single Ruby Hash:
 
-* `secret` : required : `String` || `OpenSSL::PKey::RSA` || `OpenSSL::PKey::EC` : A cryptographically secure String (for HMAC algorithms) or a public key object of an appropriate type for public key algorithms. Set to `nil` if you are using the `'none'` algorithm.
+* `secret` : required : `String` || `OpenSSL::PKey::RSA` || `OpenSSL::PKey::EC` || `Proc.new { 'secret' }`: A cryptographically secure String (for HMAC algorithms) or a public key object of an appropriate type for public key algorithms. Set to `nil` if you are using the `'none'` algorithm.
 
 * `verify` : optional : Boolean : Determines whether JWT will verify tokens keys for mismatch key types when decoded. Default is `true`. Set to `false` if you are using the `'none'` algorithm.
 
@@ -65,6 +65,7 @@ Rails.application.config.middleware.use, Rack::JWT::Auth, my_args
 ```
 
 ## Generating tokens
+
 You can generate JSON Web Tokens for your users using the
 `Rack::JWT::Token#encode` method which takes `payload`,
 `secret`, and `algorithm` params.
@@ -102,6 +103,20 @@ my_payload = {
 alg = 'HS256'
 
 Rack::JWT::Token.encode(my_payload, secret, alg)
+```
+
+## Using a proc as secret
+
+To solve the issue where individual user instances holds the secret, and not the application/backend a proc is available. This can be used something like this:
+
+```ruby
+args = {
+  secret: Proc.new do |token|
+    # Deserialize token
+    # Find user
+    user.secret
+  end
+}
 ```
 
 ## Contributing
