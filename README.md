@@ -4,6 +4,8 @@
 [![Build Status](https://travis-ci.org/eigenbart/rack-jwt.svg)](https://travis-ci.org/eigenbart/rack-jwt)
 [![Code Climate](https://codeclimate.com/github/eigenbart/rack-jwt/badges/gpa.svg)](https://codeclimate.com/github/eigenbart/rack-jwt)
 
+## Repo moved to [https://github.com/eparreno/rack-jwt](https://github.com/eparreno/rack-jwt)
+
 ## About
 
 This gem provides JSON Web Token (JWT) based authentication.
